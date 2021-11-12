@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -6,8 +8,8 @@ from selenium.webdriver.firefox.options import Options
 
 YEAR = "2021"
 
-DATASOURCES = {
-    "race": {
+DATASOURCES: dict = {
+    "races": {
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/races.html",
         "columns": ["Grand Prix", "Date", "Winner", "Car", "Laps", "Time"],
     },
@@ -15,11 +17,11 @@ DATASOURCES = {
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/drivers.html",
         "columns": ["Pos", "Driver", "Nationality", "Car", "PTS"],
     },
-    "team": {
+    "teams": {
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/team.html",
         "columns": ["Pos", "Team", "PTS"],
     },
-    "fastest_lap": {
+    "fastest_laps": {
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/fastest-laps.html",
         "columns": ["Grand Prix", "Driver", "Car", "Time"],
     },
@@ -29,17 +31,37 @@ option = Options()
 option.headless = True
 driver = webdriver.Firefox(options=option)
 
-driver.get(DATASOURCES["fastest_lap"]["url"])
 
-element = driver.find_element(By.XPATH, "//table[@class='resultsarchive-table']")
+def __get_html_table(url: str) -> str:
+    """
+    Get html table from F1 site
+    """
+    driver.get(url)
 
-html_content = element.get_attribute("outerHTML")
+    element = driver.find_element(By.XPATH, "//table[@class='resultsarchive-table']")
+    html_content = element.get_attribute("outerHTML")
+    driver.quit()
 
-driver.quit()
+    return html_content
 
-soup = BeautifulSoup(html_content, "html.parser")
-table = soup.find(name="table")
 
-df_full_race = pd.read_html(str(table))[0].head(10)
+def get_data(url: str, columns: List[str]) -> pd.DataFrame:
+    """
+    Get data from stats table in F1 site
+    """
+    html_content = __get_html_table(url)
 
-print(df_full_race)
+    soup = BeautifulSoup(html_content, "html.parser")
+    table = soup.find(name="table")
+
+    df_all_data = pd.read_html(str(table))[0]
+    df_filtered = df_all_data[columns]
+
+    return df_filtered
+
+
+stat_table = DATASOURCES["fastest_laps"]
+
+df_race = get_data(stat_table["url"], stat_table["columns"])
+
+print(df_race)
