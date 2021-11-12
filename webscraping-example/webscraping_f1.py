@@ -10,18 +10,22 @@ YEAR = "2021"
 
 DATASOURCES: dict = {
     "races": {
+        "name": "Races",
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/races.html",
         "columns": ["Grand Prix", "Date", "Winner", "Car", "Laps", "Time"],
     },
     "drivers": {
+        "name": "Drivers",
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/drivers.html",
         "columns": ["Pos", "Driver", "Nationality", "Car", "PTS"],
     },
     "teams": {
+        "name": "Teams",
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/team.html",
         "columns": ["Pos", "Team", "PTS"],
     },
     "fastest_laps": {
+        "name": "Fastest Laps",
         "url": f"https://www.formula1.com/en/results.html/{YEAR}/fastest-laps.html",
         "columns": ["Grand Prix", "Driver", "Car", "Time"],
     },
@@ -37,10 +41,8 @@ def __get_html_table(url: str) -> str:
     Get html table from F1 site
     """
     driver.get(url)
-
     element = driver.find_element(By.XPATH, "//table[@class='resultsarchive-table']")
     html_content = element.get_attribute("outerHTML")
-    driver.quit()
 
     return html_content
 
@@ -60,8 +62,10 @@ def get_data(url: str, columns: List[str]) -> pd.DataFrame:
     return df_filtered
 
 
-stat_table = DATASOURCES["fastest_laps"]
+for source in DATASOURCES.items():
+    print(f"\n{source[1]['name']}: \n")
 
-df_race = get_data(stat_table["url"], stat_table["columns"])
+    df_result = get_data(source[1]["url"], source[1]["columns"])
+    print(df_result)
 
-print(df_race)
+driver.quit()
